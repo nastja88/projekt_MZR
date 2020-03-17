@@ -2,7 +2,7 @@
 
 ## Ideja projekta
 
-Igra Spomin vsebuje k*n kart oziroma n skupin istih kart. Dve različici:
+Igra Spomin vsebuje k*n kart oziroma n skupin velikosti k istih kart. Dve različici:
 
 1. Vsak igralec ima popoln spomin (če ve, kje je paket enakih kart, ga vzame, sicer odkriva naključno).
 

@@ -8,7 +8,14 @@ izbira_nakljucne_karte <- function (k, n, odkrite_karte) {
   # "odkrite_karte"
   
   indeksi_neodkritih <- which(odkrite_karte == 0)  # indeksi neodkritih kart (gre po stolpcih)
-  indeks_karte <- sample(indeksi_neodkritih, 1)  # indeks izbrane karte
+  
+  if (length(indeksi_neodkritih) == 1) {
+    indeks_karte <- indeksi_neodkritih  # izberemo zadnjo še neodkrito karto
+  } else {
+    indeks_karte <- sample(indeksi_neodkritih, 1)  # indeks izbrane karte
+  }
+  
+  
   if (indeks_karte <= n) {
     izbrana_karta <- c(indeks_karte, 1)
   } else {
@@ -33,15 +40,13 @@ izbira_para <- function (k, n, odkrite_karte, pobrani_pari, pari, igralec) {
   # od igralcev, drugje so 0 (v resnici imamo zaradi popolnega spomina lahko največ k enic)
   potencialni_pari <- odkriti_pari - pobrani_pari 
   
-  # če igralec že ve, kje je par
-  if (sum(potencialni_pari) >= 1) {
+  if (sum(potencialni_pari) >= 1) { # če igralec že ve, kje je par
+    
     indeks_para <- min(which(potencialni_pari == 1))  # npr. vzame par z najmanjšim indeksom, lahko bi vzeli tudi naključnega
     pobrani_pari[indeks_para] <- 1
     pari[igralec] <- pari[igralec] + 1
-  }
-  
-  # če igralec ne pozna nobenega para
-  else {
+    
+  } else { # če igralec ne pozna nobenega para
     
     # izbira prve karte (naključna - izmed še neodkritih vse z enako verjetnostjo)
     izbrana_karta_1 <- izbira_nakljucne_karte(k, n, odkrite_karte)
@@ -52,20 +57,21 @@ izbira_para <- function (k, n, odkrite_karte, pobrani_pari, pari, igralec) {
     
     ## če se prva karta ujema s katero izmed že odkritih
     if (sum(odkrite_karte[izbrana_karta_1[1],]) == 2) {
+      
       pobrani_pari[izbrana_karta_1[1]] <- 1
       pari[igralec] <- pari[igralec] + 1
-    }
-    
-    ## če se prva karta ne ujema z nobeno izmed že odkritih (naključna izbira izmed 
-    ## preostalih)
-    else {
+      
+    } else { ## če se prva karta ne ujema z nobeno izmed že odkritih (naključna izbira izmed preostalih)
+      
       izbrana_karta_2 <- izbira_nakljucne_karte(k, n, odkrite_karte)
       odkrite_karte[izbrana_karta_2[1], izbrana_karta_2[2]] <- 1
+      
       ## če se karti ujemata, smo našli par
       if (izbrana_karta_1[1] == izbrana_karta_2[1]) {
         pobrani_pari[izbrana_karta_1[1]] <- 1
         pari[igralec] <- pari[igralec] + 1
       }
+      
     }
   }
   

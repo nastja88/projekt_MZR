@@ -1,6 +1,7 @@
 # oba igralca imata popoln spomin
 set.seed(2020)
 
+
 izbira_nakljucne_karte <- function (k, n, odkrite_karte) {
   # funkcija "izbira_nakljucne_karte" izbere naključno karto izmed vseh še ne 
   # odkritih kart (vsako izmed njih izbere z enako verjetnostjo) pri dani 
@@ -10,17 +11,17 @@ izbira_nakljucne_karte <- function (k, n, odkrite_karte) {
   indeksi_neodkritih <- which(odkrite_karte == 0)  # indeksi neodkritih kart (gre po stolpcih)
   
   if (length(indeksi_neodkritih) == 1) {
-    indeks_karte <- indeksi_neodkritih  # izberemo zadnjo še neodkrito karto
+    indeks_karte <- indeksi_neodkritih  # izberemo zadnjo še neodkrito karto (moramo zapisati posebej zaradi posebnosti funkcije sample)
   } else {
     indeks_karte <- sample(indeksi_neodkritih, 1)  # indeks izbrane karte
   }
   
-  
-  if (indeks_karte <= n) {
-    izbrana_karta <- c(indeks_karte, 1)
-  } else {
-    izbrana_karta <- c(indeks_karte - n, 2)
+  stolpec <- 1  # indeks stolpca, v katerem se nahaja nova karta
+  while (indeks_karte > n) {  # zagotovo ne izvedemo več kot (k-1)-krat -> ne pademo iz ranga
+    indeks_karte <- indeks_karte - n
+    stolpec <- stolpec + 1
   }
+  izbrana_karta <- c(indeks_karte, stolpec)
   
   return(izbrana_karta)
   

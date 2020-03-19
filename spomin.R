@@ -34,11 +34,11 @@ izbira_para <- function (k, n, odkrite_karte, pobrani_pari, pari, igralec) {
   # "pobrani_pari", številu pobranih parov "pari" po igralcih in indeks igralca "igralec",
   # ki je na potezi
   
-  # vektor "odkriti_pari" ima 1 na mestu skupine, kjer sta obe karti iz para že odkriti, 
+  # vektor "odkriti_pari" ima 1 na mestu skupine, kjer so vse karte iz skupine že odkrite, 
   # drugje so 0
   odkriti_pari <- (rowSums(odkrite_karte) == k)  
-  # vektor ima 1 na mestu, kjer sta obe karti iz para že odkriti in par še ni pri nobenem 
-  # od igralcev, drugje so 0 (v resnici imamo zaradi popolnega spomina lahko največ k enic)
+  # vektor ima 1 na mestu, kjer so vse karte iz skupine že odkrite in skupina še ni pri 
+  # nobenem od igralcev, drugje so 0 (zaradi popolnega spomina imamo lahko največ k enic)
   potencialni_pari <- odkriti_pari - pobrani_pari 
   
   if (sum(potencialni_pari) >= 1) { # če igralec že ve, kje je par
@@ -49,31 +49,30 @@ izbira_para <- function (k, n, odkrite_karte, pobrani_pari, pari, igralec) {
     
   } else { # če igralec ne pozna nobenega para
     
-    # izbira prve karte (naključna - izmed še neodkritih vse z enako verjetnostjo)
-    izbrana_karta_1 <- izbira_nakljucne_karte(k, n, odkrite_karte)
-    odkrite_karte[izbrana_karta_1[1], izbrana_karta_1[2]] <- 1
+    # matrika "izbrane_karte" ima v i-tem stolpcu zapisana indeksa vrstice in stolpca 
+    # (v tem zaporedju) i-te izbrane karte 
+    izbrane_karte <- matrix(0, nrow = 2, ncol = k) 
     
-    
-    # izbira druge karte
-    
-    ## če se prva karta ujema s katero izmed že odkritih
-    if (sum(odkrite_karte[izbrana_karta_1[1],]) == 2) {
+    for (i in 1:k) {
+     
+      # izbira karte (naključna - izmed še neodkritih vse z enako verjetnostjo)
+      izbrane_karte[,i] <- izbira_nakljucne_karte(k, n, odkrite_karte)
+      odkrite_karte[izbrane_karte[1,i], izbrane_karte[2,i]] <- 1
       
-      pobrani_pari[izbrana_karta_1[1]] <- 1
-      pari[igralec] <- pari[igralec] + 1
+      stevilo_razlicnih_kart <- length(unique(izbrane_karte[1,1:i]))
+      if (stevilo_razlicnih_kart > 1) {  # odkrili smo dve različni karti -> ni >>para<<
+        break
+      } 
       
-    } else { ## če se prva karta ne ujema z nobeno izmed že odkritih (naključna izbira izmed preostalih)
-      
-      izbrana_karta_2 <- izbira_nakljucne_karte(k, n, odkrite_karte)
-      odkrite_karte[izbrana_karta_2[1], izbrana_karta_2[2]] <- 1
-      
-      ## če se karti ujemata, smo našli par
-      if (izbrana_karta_1[1] == izbrana_karta_2[1]) {
-        pobrani_pari[izbrana_karta_1[1]] <- 1
+      if ((stevilo_razlicnih_kart == 1) &  (sum(odkrite_karte[izbrane_karte[1,i],]) == k)) {  
+        # če je do sedaj vseh i kart enakih in poznamo še ostalih k-i in poberemo >>par<<
+        pobrani_pari[izbrane_karte[1,i]] <- 1
         pari[igralec] <- pari[igralec] + 1
+        break
       }
       
     }
+    
   }
   
   return(list("odkrite_karte" = odkrite_karte, 
@@ -162,8 +161,7 @@ igra <- function (p, k, n) {
 
 
 p <- 2  # število igralcev
-k <- 2  # velikost >>para<< oziroma skupine enakih kart # zaenkrat deluje le za 2!
+k <- 5  # velikost >>para<< oziroma skupine enakih kart 
 n <- 10  # število >>parov<<
 
 igra(p, k, n)
-

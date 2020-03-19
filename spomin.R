@@ -1,13 +1,13 @@
-# oba igralca imata popoln spomin
+# vsi igralci imajo popoln spomin
 set.seed(2020)
 
 
-izbira_nakljucne_karte <- function (k, n, odkrite_karte) {
-  # funkcija "izbira_nakljucne_karte" izbere naključno karto izmed vseh še ne 
-  # odkritih kart (vsako izmed njih izbere z enako verjetnostjo) pri dani 
-  # velikosti >>parov<< "k", številu >>parov<< "n", matriki odkritih kart 
+izbira_nakljucne_karte <- function (odkrite_karte) {
+  # funkcija "izbira_nakljucne_karte" izbere naključno karto izmed vseh še ne odkritih kart 
+  # (vsako izmed njih izbere z enako verjetnostjo) pri dani matriki odkritih kart 
   # "odkrite_karte"
   
+  n <- nrow(odkrite_karte)  # število skupin
   indeksi_neodkritih <- which(odkrite_karte == 0)  # indeksi neodkritih kart (gre po stolpcih)
   
   if (length(indeksi_neodkritih) == 1) {
@@ -28,26 +28,28 @@ izbira_nakljucne_karte <- function (k, n, odkrite_karte) {
 }
 
 
-izbira_para <- function (k, n, odkrite_karte, pobrani_pari, pari, igralec) {
-  # funkcija "izbira_para" izbere nov par pri dani velikosti >>parov<< "k", številu 
-  # >>parov<< "n", matriki odkritih kart "odkrite_karte", vektorju pobranih parov 
-  # "pobrani_pari", številu pobranih parov "pari" po igralcih in indeks igralca "igralec",
-  # ki je na potezi
+izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec) {
+  # funkcija "izbira_skupine" izbere novo skupino pri dani matriki odkritih kart 
+  # "odkrite_karte", vektorju pobranih skupin "pobrane_skupine", številu pobranih skupin 
+  # "skupine_po_igralcih" po igralcih in indeks igralca "igralec", ki je na potezi
   
-  # vektor "odkriti_pari" ima 1 na mestu skupine, kjer so vse karte iz skupine že odkrite, 
+  k <- ncol(odkrite_karte)  # velikost skupin
+  n <- nrow(odkrite_karte)  # število skupin
+  
+  # vektor "odkrite_skupine" ima 1 na mestu skupine, kjer so vse karte iz skupine že odkrite, 
   # drugje so 0
-  odkriti_pari <- (rowSums(odkrite_karte) == k)  
+  odkrite_skupine <- (rowSums(odkrite_karte) == k)  
   # vektor ima 1 na mestu, kjer so vse karte iz skupine že odkrite in skupina še ni pri 
   # nobenem od igralcev, drugje so 0 (zaradi popolnega spomina imamo lahko največ k enic)
-  potencialni_pari <- odkriti_pari - pobrani_pari 
+  potencialne_skupine <- odkrite_skupine - pobrane_skupine 
   
-  if (sum(potencialni_pari) >= 1) { # če igralec že ve, kje je par
+  if (sum(potencialne_skupine) >= 1) { # če igralec že ve, kje je skupina
     
-    indeks_para <- min(which(potencialni_pari == 1))  # npr. vzame par z najmanjšim indeksom, lahko bi vzeli tudi naključnega
-    pobrani_pari[indeks_para] <- 1
-    pari[igralec] <- pari[igralec] + 1
+    indeks_skupine <- min(which(potencialne_skupine == 1))  # npr. vzame skupino z najmanjšim indeksom, lahko bi vzeli tudi naključno
+    pobrane_skupine[indeks_skupine] <- 1
+    skupine_po_igralcih[igralec] <- skupine_po_igralcih[igralec] + 1
     
-  } else { # če igralec ne pozna nobenega para
+  } else { # če igralec ne pozna nobene skupine
     
     # matrika "izbrane_karte" ima v i-tem stolpcu zapisana indeksa vrstice in stolpca 
     # (v tem zaporedju) i-te izbrane karte 
@@ -56,18 +58,18 @@ izbira_para <- function (k, n, odkrite_karte, pobrani_pari, pari, igralec) {
     for (i in 1:k) {
      
       # izbira karte (naključna - izmed še neodkritih vse z enako verjetnostjo)
-      izbrane_karte[,i] <- izbira_nakljucne_karte(k, n, odkrite_karte)
+      izbrane_karte[,i] <- izbira_nakljucne_karte(odkrite_karte)
       odkrite_karte[izbrane_karte[1,i], izbrane_karte[2,i]] <- 1
       
       stevilo_razlicnih_kart <- length(unique(izbrane_karte[1,1:i]))
-      if (stevilo_razlicnih_kart > 1) {  # odkrili smo dve različni karti -> ni >>para<<
+      if (stevilo_razlicnih_kart > 1) {  # odkrili smo dve različni karti -> v tem koraku ne moremo odkriti skupine
         break
       } 
       
       if ((stevilo_razlicnih_kart == 1) &  (sum(odkrite_karte[izbrane_karte[1,i],]) == k)) {  
-        # če je do sedaj vseh i kart enakih in poznamo še ostalih k-i in poberemo >>par<<
-        pobrani_pari[izbrane_karte[1,i]] <- 1
-        pari[igralec] <- pari[igralec] + 1
+        # če je do sedaj vseh i kart enakih in poznamo še ostalih k-i -> poberemo skupino
+        pobrane_skupine[izbrane_karte[1,i]] <- 1
+        skupine_po_igralcih[igralec] <- skupine_po_igralcih[igralec] + 1
         break
       }
       
@@ -76,40 +78,39 @@ izbira_para <- function (k, n, odkrite_karte, pobrani_pari, pari, igralec) {
   }
   
   return(list("odkrite_karte" = odkrite_karte, 
-              "pobrani_pari" = pobrani_pari, 
-              "pari" = pari))
+              "pobrane_skupine" = pobrane_skupine, 
+              "skupine_po_igralcih" = skupine_po_igralcih))
   
 }
 
 
-poteza_igre <- function (k, n, odkrite_karte, pobrani_pari, pari, igralec) {
+poteza_igre <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec) {
   # funkcija "poteza_igre" naredi eno potezo igre (torej od takrat, ko je igralec 
-  # na vrsti, do takrat, ko igro nadaljuje naslednji) pri dani velikosti >>parov<< 
-  # "k", številu >>parov<< "n", matriki odkritih kart "odkrite_karte", vektorju 
-  # pobranih parov "pobrani_pari" in številu pobranih parov "pari" igralca, ki 
-  # je na potezi
+  # na vrsti, do takrat, ko igro nadaljuje naslednji) pri dani matriki odkritih kart 
+  # "odkrite_karte", vektorju pobranih skupin "pobrane_skupine" in številu pobranih skupin 
+  # "skupine_po_igralcih" igralca, ki je na potezi
   
-  stevilo_prej_najdenih_parov <- sum(pari)
+  stevilo_prej_najdenih_skupin <- sum(skupine_po_igralcih)
   nadaljuj <- TRUE
   
   while (nadaljuj == TRUE) {
     
-    izbira_para <- izbira_para(k, n, odkrite_karte, pobrani_pari, pari, igralec)
-    odkrite_karte <- izbira_para$odkrite_karte
-    pobrani_pari <- izbira_para$pobrani_pari
-    pari <- izbira_para$pari
+    izbira_skupine <- izbira_skupine(odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec)
+    odkrite_karte <- izbira_skupine$odkrite_karte
+    pobrane_skupine <- izbira_skupine$pobrane_skupine
+    skupine_po_igralcih <- izbira_skupine$skupine_po_igralcih
     
-    stevilo_sedaj_najdenih_parov <- sum(pari)
-    # če poberemo par in še niso pobrani vsi pari, nadaljujemo
-    nadaljuj <- (stevilo_prej_najdenih_parov + 1 == stevilo_sedaj_najdenih_parov) & 
-      (stevilo_sedaj_najdenih_parov < n)  
-    stevilo_prej_najdenih_parov <- stevilo_sedaj_najdenih_parov
+    stevilo_sedaj_najdenih_skupin <- sum(skupine_po_igralcih)
+    # če poberemo skupino in še niso pobrane vse skupine, nadaljujemo
+    nadaljuj <- (stevilo_prej_najdenih_skupin + 1 == stevilo_sedaj_najdenih_skupin) & 
+      (stevilo_sedaj_najdenih_skupin < n)  
+    stevilo_prej_najdenih_skupin <- stevilo_sedaj_najdenih_skupin
     
   }
   
   return(list("odkrite_karte" = odkrite_karte, 
-              "pobrani_pari" = pobrani_pari, 
-              "pari" = pari))
+              "pobrane_skupine" = pobrane_skupine, 
+              "skupine_po_igralcih" = skupine_po_igralcih))
   
 }
 
@@ -118,32 +119,32 @@ igra <- function (p, k, n) {
   # funkcija "igra" za podano število igralcev "p", velikost skupine "k" in 
   # število skupin "n" odigra naključno igro spomina
   
-  odkrite_karte <- matrix(0, nrow = n, ncol = k)  # matrika odkritih parov
-  pobrani_pari <- rep(0, n)  # vektor pobranih parov
-  pari <- rep(0, p)  # vektor števila pobranih parov 
+  odkrite_karte <- matrix(0, nrow = n, ncol = k)  # matrika odkritih kart
+  pobrane_skupine <- rep(0, n)  # vektor pobranih skupin
+  skupine_po_igralcih <- rep(0, p)  # vektor števila pobranih skupin po igralcih 
   stevilo_potez <- 0  # število potez oziroma zamenjav igralcev
     
-  while (sum(pobrani_pari) != n) {
+  while (sum(pobrane_skupine) != n) {
   
     for (igralec in 1:p) {
       
       # ena poteza igre 
-      poteza_igre <- poteza_igre(k, n, odkrite_karte, pobrani_pari, pari, igralec)
+      poteza_igre <- poteza_igre(odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec)
       odkrite_karte <- poteza_igre$odkrite_karte
-      pobrani_pari <- poteza_igre$pobrani_pari
-      pari <- poteza_igre$pari
+      pobrane_skupine <- poteza_igre$pobrane_skupine
+      skupine_po_igralcih <- poteza_igre$skupine_po_igralcih
       
       stevilo_potez <- stevilo_potez + 1
       
       print(paste("Poteza:", stevilo_potez))
       print("Odkrite karte:")
       print(odkrite_karte)
-      print("Pobrani pari")
-      print(pobrani_pari)
-      print("Pari")
-      print(pari)
+      print("Pobrane skupine")
+      print(pobrane_skupine)
+      print("Skupine po igralcih")
+      print(skupine_po_igralcih)
       
-      if (sum(pobrani_pari) == n) {  # igralec je pobral zadnji par
+      if (sum(pobrane_skupine) == n) {  # igralec je pobral zadnjo skupino
         break
       }
       
@@ -151,8 +152,8 @@ igra <- function (p, k, n) {
   
   }
   
-  zaporedje_igralcev <- order(pari, decreasing = TRUE)  # indeksi igralcev razvrščeni od zmagovalca do poraženca
-  # zmagovalec <- which.max(pari)  # če potrebujemo le zmagovalca (hitreje kot zgoraj)
+  zaporedje_igralcev <- order(skupine_po_igralcih, decreasing = TRUE)  # indeksi igralcev razvrščeni od zmagovalca do poraženca
+  # zmagovalec <- which.max(skupine_po_igralcih)  # če potrebujemo le zmagovalca (hitreje kot zgoraj)
   
   return(list("zaporedje_igralcev" = zaporedje_igralcev, 
               "stevilo_potez" = stevilo_potez))
@@ -161,7 +162,7 @@ igra <- function (p, k, n) {
 
 
 p <- 2  # število igralcev
-k <- 5  # velikost >>para<< oziroma skupine enakih kart 
-n <- 10  # število >>parov<<
+k <- 5  # velikost skupine enakih kart 
+n <- 10  # število skupin
 
 igra(p, k, n)

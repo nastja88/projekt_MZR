@@ -42,7 +42,8 @@ izbira_nakljucne_karte <- function (odkrite_karte, pobrane_skupine, spomin) {
 izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec, spomin) {
   # funkcija "izbira_skupine" izbere novo skupino pri dani matriki odkritih kart 
   # "odkrite_karte", vektorju pobranih skupin "pobrane_skupine", številu pobranih skupin 
-  # "skupine_po_igralcih" po igralcih in indeks igralca "igralec", ki je na potezi
+  # "skupine_po_igralcih" po igralcih, indeksu igralca "igralec", ki je na potezi, in 
+  # verjetnosti nepozabljanja "spomin" iz [0,1]
   
   k <- ncol(odkrite_karte)  # velikost skupin
   n <- nrow(odkrite_karte)  # število skupin
@@ -51,16 +52,17 @@ izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih,
   # drugje so 0
   odkrite_skupine <- (rowSums(odkrite_karte) == k)  
   # vektor ima 1 na mestu, kjer so vse karte iz skupine že odkrite in skupina še ni pri 
-  # nobenem od igralcev, drugje so 0 (zaradi popolnega spomina imamo lahko največ k enic)
+  # nobenem od igralcev, drugje so 0 
   potencialne_skupine <- odkrite_skupine - pobrane_skupine 
   
-  if (sum(potencialne_skupine) >= 1) { # če igralec že ve, kje je skupina
+  if ((sum(potencialne_skupine) >= 1) & (runif(1) <= spomin^k)) { 
+    # če so bile že odkrite vse karte iz skupine in se jih igralec spomni 
     
     indeks_skupine <- min(which(potencialne_skupine == 1))  # npr. vzame skupino z najmanjšim indeksom, lahko bi vzeli tudi naključno
     pobrane_skupine[indeks_skupine] <- 1
     skupine_po_igralcih[igralec] <- skupine_po_igralcih[igralec] + 1
     
-  } else { # če igralec ne pozna nobene skupine
+  } else { # če nobena skupina še ni bila odkrita ali se jih igralec ne spomni
     
     # matrika "izbrane_karte" ima v i-tem stolpcu zapisana indeksa vrstice in stolpca 
     # (v tem zaporedju) i-te izbrane karte 
@@ -68,7 +70,6 @@ izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih,
     
     for (i in 1:k) {
       
-      # izbira karte (naključna - izmed še neodkritih vse z enako verjetnostjo)
       izbrane_karte[,i] <- izbira_nakljucne_karte(odkrite_karte, pobrane_skupine, spomin)
       odkrite_karte[izbrane_karte[1,i], izbrane_karte[2,i]] <- 1
       
@@ -77,8 +78,10 @@ izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih,
         break
       } 
       
-      if ((stevilo_razlicnih_kart == 1) &  (sum(odkrite_karte[izbrane_karte[1,i],]) == k)) {  
-        # če je do sedaj vseh i kart enakih in poznamo še ostalih k-i -> poberemo skupino
+      if ((stevilo_razlicnih_kart == 1) & (sum(odkrite_karte[izbrane_karte[1,i],]) == k) &
+          (runif(1) <= spomin^(k-i))) {  
+        # če je do sedaj vseh i kart enakih in je bilo še ostalih k-i odkritih ter se jih 
+        # igralec spomni -> poberemo skupino
         pobrane_skupine[izbrane_karte[1,i]] <- 1
         skupine_po_igralcih[igralec] <- skupine_po_igralcih[igralec] + 1
         break

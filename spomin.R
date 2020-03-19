@@ -1,19 +1,27 @@
-# vsi igralci imajo popoln spomin
 set.seed(2020)
 
 
-izbira_nakljucne_karte <- function (odkrite_karte) {
-  # funkcija "izbira_nakljucne_karte" izbere naključno karto izmed vseh še ne odkritih kart 
-  # (vsako izmed njih izbere z enako verjetnostjo) pri dani matriki odkritih kart 
-  # "odkrite_karte"
+izbira_nakljucne_karte <- function (odkrite_karte, pobrane_skupine, spomin) {
+  # funkcija "izbira_nakljucne_karte" izbere naključno karto izmed vseh še ne pobranih kart 
+  # pri dani matriki odkritih kart "odkrite_karte" in verjetnosti nepozabljanja "spomin" iz 
+  # [0,1]; z verjetnostjo "spomin" izbiramo izmed še neodkritih kart, z verjetnostjo 
+  # 1-"spomin" pa izmed že odkritih, a še ne pobranih kart (iz posamezne vrste jih izberemo
+  # z enako verjetnostjo); 1 pomeni popoln spomin, 0 pa popolno naključnost
   
   n <- nrow(odkrite_karte)  # število skupin
-  indeksi_neodkritih <- which(odkrite_karte == 0)  # indeksi neodkritih kart (gre po stolpcih)
+  izbira_neodkrite <- (runif(1) <= spomin)  # indikator ali izbiramo med neodkritimi ali nepobranimi odkritimi
   
-  if (length(indeksi_neodkritih) == 1) {
-    indeks_karte <- indeksi_neodkritih  # izberemo zadnjo še neodkrito karto (moramo zapisati posebej zaradi posebnosti funkcije sample)
+  if (izbira_neodkrite) {  # izbiramo med neodkritimi
+    indeksi_kart <- which(odkrite_karte == 0)  # indeksi neodkritih kart (gre po stolpcih)
+  } else{  # izbiramo med nepobranimi odkritimi
+    nepobrane_odkrite <- odkrite_karte - pobrane_skupine  # vsakemu stolpcu odštejemo morebitne pobrane
+    indeksi_kart <- which(nepobrane_odkrite == 1)  # indeksi nepobranih odkritih kart (gre po stolpcih)
+  }
+  
+  if (length(indeksi_kart) == 1) {
+    indeks_karte <- indeksi_kart  # izberemo edino možno karto (moramo zapisati posebej zaradi posebnosti funkcije sample)
   } else {
-    indeks_karte <- sample(indeksi_neodkritih, 1)  # indeks izbrane karte
+    indeks_karte <- sample(indeksi_kart, 1)  # indeks izbrane karte
   }
   
   stolpec <- 1  # indeks stolpca, v katerem se nahaja nova karta
@@ -23,12 +31,15 @@ izbira_nakljucne_karte <- function (odkrite_karte) {
   }
   izbrana_karta <- c(indeks_karte, stolpec)
   
+  print("Izbrana karta:")
+  print(izbrana_karta)
+  
   return(izbrana_karta)
   
 }
 
 
-izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec) {
+izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec, spomin) {
   # funkcija "izbira_skupine" izbere novo skupino pri dani matriki odkritih kart 
   # "odkrite_karte", vektorju pobranih skupin "pobrane_skupine", številu pobranih skupin 
   # "skupine_po_igralcih" po igralcih in indeks igralca "igralec", ki je na potezi
@@ -56,9 +67,9 @@ izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih,
     izbrane_karte <- matrix(0, nrow = 2, ncol = k) 
     
     for (i in 1:k) {
-     
+      
       # izbira karte (naključna - izmed še neodkritih vse z enako verjetnostjo)
-      izbrane_karte[,i] <- izbira_nakljucne_karte(odkrite_karte)
+      izbrane_karte[,i] <- izbira_nakljucne_karte(odkrite_karte, pobrane_skupine, spomin)
       odkrite_karte[izbrane_karte[1,i], izbrane_karte[2,i]] <- 1
       
       stevilo_razlicnih_kart <- length(unique(izbrane_karte[1,1:i]))
@@ -84,7 +95,10 @@ izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih,
 }
 
 
-poteza_igre <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec) {
+# ------------------------------------------------------------------------------------------
+
+
+poteza_igre <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec, spomin) {
   # funkcija "poteza_igre" naredi eno potezo igre (torej od takrat, ko je igralec 
   # na vrsti, do takrat, ko igro nadaljuje naslednji) pri dani matriki odkritih kart 
   # "odkrite_karte", vektorju pobranih skupin "pobrane_skupine" in številu pobranih skupin 
@@ -95,7 +109,7 @@ poteza_igre <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih, ig
   
   while (nadaljuj == TRUE) {
     
-    izbira_skupine <- izbira_skupine(odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec)
+    izbira_skupine <- izbira_skupine(odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec, spomin)
     odkrite_karte <- izbira_skupine$odkrite_karte
     pobrane_skupine <- izbira_skupine$pobrane_skupine
     skupine_po_igralcih <- izbira_skupine$skupine_po_igralcih
@@ -115,7 +129,7 @@ poteza_igre <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih, ig
 }
 
 
-igra <- function (p, k, n) {
+igra <- function (p, k, n, spomin) {
   # funkcija "igra" za podano število igralcev "p", velikost skupine "k" in 
   # število skupin "n" odigra naključno igro spomina
   
@@ -129,7 +143,7 @@ igra <- function (p, k, n) {
     for (igralec in 1:p) {
       
       # ena poteza igre 
-      poteza_igre <- poteza_igre(odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec)
+      poteza_igre <- poteza_igre(odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec, spomin)
       odkrite_karte <- poteza_igre$odkrite_karte
       pobrane_skupine <- poteza_igre$pobrane_skupine
       skupine_po_igralcih <- poteza_igre$skupine_po_igralcih
@@ -162,7 +176,8 @@ igra <- function (p, k, n) {
 
 
 p <- 2  # število igralcev
-k <- 5  # velikost skupine enakih kart 
+k <- 2  # velikost skupine enakih kart 
 n <- 10  # število skupin
+spomin <- 1
 
-igra(p, k, n)
+igra(p, k, n, spomin)

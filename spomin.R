@@ -1,21 +1,30 @@
 set.seed(2020)
 
 
-izbira_nakljucne_karte <- function (odkrite_karte, pobrane_skupine, spomin) {
+izbira_nakljucne_karte <- function (odkrite_karte, pobrane_skupine, izbrane_karte, spomin) {
   # funkcija "izbira_nakljucne_karte" izbere naključno karto izmed vseh še ne pobranih kart 
-  # pri dani matriki odkritih kart "odkrite_karte" in verjetnosti nepozabljanja "spomin" iz 
-  # [0,1]; z verjetnostjo "spomin" izbiramo izmed še neodkritih kart, z verjetnostjo 
-  # 1-"spomin" pa izmed že odkritih, a še ne pobranih kart (iz posamezne vrste jih izberemo
-  # z enako verjetnostjo); 1 pomeni popoln spomin, 0 pa popolno naključnost
+  # pri dani matriki odkritih kart "odkrite_karte", matriki "izbrane_karte" z indeksi vrstic
+  # in stolpcev v tem koraku izbranih kart in verjetnosti nepozabljanja "spomin" iz [0,1]; z 
+  # verjetnostjo "spomin" izbiramo izmed še neodkritih kart, z verjetnostjo 1-"spomin" pa 
+  # izmed vseh še ne pobranih kart ; 1 pomeni popoln spomin, 0 pa popolno naključnost
   
   n <- nrow(odkrite_karte)  # število skupin
+  k <- ncol(odkrite_karte)  # velikost skupin
   izbira_neodkrite <- (runif(1) <= spomin)  # indikator ali izbiramo med neodkritimi ali nepobranimi odkritimi
   
-  if (izbira_neodkrite) {  # izbiramo med neodkritimi
+  nepobrane_odkrite <- odkrite_karte - pobrane_skupine  # vsakemu stolpcu odštejemo morebitne pobrane
+  indeksi_nepobranih_odkritih <- which(nepobrane_odkrite == 1)  # indeksi nepobranih odkritih kart (gre po stolpcih)
+  
+  if (izbira_neodkrite | (length(indeksi_nepobranih_odkritih) == 0)) {  # med neodkritimi izbiramo tudi, če ni nepobranih odkritih
     indeksi_kart <- which(odkrite_karte == 0)  # indeksi neodkritih kart (gre po stolpcih)
-  } else{  # izbiramo med nepobranimi odkritimi
-    nepobrane_odkrite <- odkrite_karte - pobrane_skupine  # vsakemu stolpcu odštejemo morebitne pobrane
-    indeksi_kart <- which(nepobrane_odkrite == 1)  # indeksi nepobranih odkritih kart (gre po stolpcih)
+  } else{  # izbiramo med nepobranimi 
+    nepobrane_karte <- matrix(1, nrow = n, ncol = k) - pobrane_skupine
+    stevilo_izbranih_kart <- min(which(izbrane_karte[1,] == 0)) - 1
+    for (i in 1:stevilo_izbranih_kart) {
+      nepobrane_karte[izbrane_karte[1,i], izbrane_karte[2,i]] <- 0  # v istem koraku ne izberemo ene karte večkrat
+    }
+    
+    indeksi_kart <- which(nepobrane_karte == 1)
   }
   
   if (length(indeksi_kart) == 1) {
@@ -70,7 +79,7 @@ izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih,
     
     for (i in 1:k) {
       
-      izbrane_karte[,i] <- izbira_nakljucne_karte(odkrite_karte, pobrane_skupine, spomin)
+      izbrane_karte[,i] <- izbira_nakljucne_karte(odkrite_karte, pobrane_skupine, izbrane_karte, spomin)
       odkrite_karte[izbrane_karte[1,i], izbrane_karte[2,i]] <- 1
       
       stevilo_razlicnih_kart <- length(unique(izbrane_karte[1,1:i]))
@@ -96,9 +105,6 @@ izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih,
               "skupine_po_igralcih" = skupine_po_igralcih))
   
 }
-
-
-# ------------------------------------------------------------------------------------------
 
 
 poteza_igre <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec, spomin) {
@@ -132,7 +138,7 @@ poteza_igre <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih, ig
 }
 
 
-igra <- function (p, k, n, spomin) {
+igra <- function (p, k, n, spomini) {
   # funkcija "igra" za podano število igralcev "p", velikost skupine "k" in 
   # število skupin "n" odigra naključno igro spomina
   
@@ -146,7 +152,7 @@ igra <- function (p, k, n, spomin) {
     for (igralec in 1:p) {
       
       # ena poteza igre 
-      poteza_igre <- poteza_igre(odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec, spomin)
+      poteza_igre <- poteza_igre(odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec, spomini[igralec])
       odkrite_karte <- poteza_igre$odkrite_karte
       pobrane_skupine <- poteza_igre$pobrane_skupine
       skupine_po_igralcih <- poteza_igre$skupine_po_igralcih
@@ -181,6 +187,6 @@ igra <- function (p, k, n, spomin) {
 p <- 2  # število igralcev
 k <- 2  # velikost skupine enakih kart 
 n <- 10  # število skupin
-spomin <- 1
+spomini <- c(1,0)  # verjetnost nepozabljanja za vsakega od igralcev (nanaša se na posamezno karto)
 
-igra(p, k, n, spomin)
+igra(p, k, n, spomini)

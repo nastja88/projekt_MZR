@@ -40,8 +40,8 @@ izbira_nakljucne_karte <- function (odkrite_karte, pobrane_skupine, izbrane_kart
   }
   izbrana_karta <- c(indeks_karte, stolpec)
   
-  print("Izbrana karta:")
-  print(izbrana_karta)
+  # print("Izbrana karta:")
+  # print(izbrana_karta)
   
   return(izbrana_karta)
   
@@ -159,13 +159,13 @@ igra <- function (p, k, n, spomini) {
       
       stevilo_potez <- stevilo_potez + 1
       
-      print(paste("Poteza:", stevilo_potez))
-      print("Odkrite karte:")
-      print(odkrite_karte)
-      print("Pobrane skupine")
-      print(pobrane_skupine)
-      print("Skupine po igralcih")
-      print(skupine_po_igralcih)
+      # print(paste("Poteza:", stevilo_potez))
+      # print("Odkrite karte:")
+      # print(odkrite_karte)
+      # print("Pobrane skupine")
+      # print(pobrane_skupine)
+      # print("Skupine po igralcih")
+      # print(skupine_po_igralcih)
       
       if (sum(pobrane_skupine) == n) {  # igralec je pobral zadnjo skupino
         break
@@ -187,6 +187,49 @@ igra <- function (p, k, n, spomini) {
 p <- 2  # število igralcev
 k <- 2  # velikost skupine enakih kart 
 n <- 10  # število skupin
-spomini <- c(1,0)  # verjetnost nepozabljanja za vsakega od igralcev (nanaša se na posamezno karto)
+spomini <- c(0,0)  # verjetnost nepozabljanja za vsakega od igralcev (nanaša se na posamezno karto)
 
-igra(p, k, n, spomini)
+# igra(p, k, n, spomini)
+
+
+library(parallel)  # detectCores
+library(doParallel)  # registerDoParallel
+library(doRNG)  # %dorng%
+
+m <- 100  # število ponovitev poskusa
+
+# uporabili bomo paralelno računanje
+no_cores <- detectCores() - 1
+cl <- makeCluster(no_cores)
+registerDoParallel(cl)
+
+rez <- foreach(j = 1:m, .combine = "rbind", 
+               .export = c("izbira_nakljucne_karte", "izbira_skupine", "poteza_igre")) %dorng% {
+                 
+                 rezultati_igre <- igra(p, k, n, spomini)
+                 
+                 # zapišimo rezultate
+                 cbind("stevilo_menjav" = rezultati_igre$stevilo_potez,  # število menjav igralcev
+                       "zmagovalec" = rezultati_igre$zaporedje_igralcev[1])  # indeks zmagovalca
+                 
+               }
+
+stopCluster(cl)
+
+rez <- as.data.frame(rez)
+saveRDS(rez, "rezultati")
+
+povprecje <- mean(rez$stevilo_menjav)
+
+# grafični prikaz
+library(ggplot2)
+ggplot(data = rez, aes(x = stevilo_menjav)) +
+  geom_histogram(aes(x = stevilo_menjav, y = ..density..), fill = "cadetblue1", bins = 20) +
+  geom_line(stat="density", color = "red", size = 1) +
+  labs(title = "Prikaz vzorčne porazdelitve števila menjav med igralci", 
+       x = "Število menjav", y = "Frekvenca [%]") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+zmage <- table(rez$zmagovalec)
+delez_zmag_po_igralcih <- sort(zmage / sum(zmage), decreasing = TRUE) * 100  # v %

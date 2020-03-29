@@ -12,20 +12,21 @@ izbira_nakljucne_karte <- function (odkrite_karte, pobrane_skupine, izbrane_kart
   k <- ncol(odkrite_karte)  # velikost skupin
   izbira_neodkrite <- (runif(1) <= spomin)  # indikator ali izbiramo med neodkritimi ali nepobranimi odkritimi
   
-  nepobrane_odkrite <- odkrite_karte - pobrane_skupine  # vsakemu stolpcu odštejemo morebitne pobrane
-  indeksi_nepobranih_odkritih <- which(nepobrane_odkrite == 1)  # indeksi nepobranih odkritih kart (gre po stolpcih)
-  
-  if (izbira_neodkrite | (length(indeksi_nepobranih_odkritih) == 0)) {  # med neodkritimi izbiramo tudi, če ni nepobranih odkritih
-    indeksi_kart <- which(odkrite_karte == 0)  # indeksi neodkritih kart (gre po stolpcih)
-  } else{  # izbiramo med nepobranimi 
-    nepobrane_karte <- matrix(1, nrow = n, ncol = k) - pobrane_skupine
-    stevilo_izbranih_kart <- min(which(izbrane_karte[1,] == 0)) - 1
-    for (i in 1:stevilo_izbranih_kart) {
-      nepobrane_karte[izbrane_karte[1,i], izbrane_karte[2,i]] <- 0  # v istem koraku ne izberemo ene karte večkrat
-    }
-    
-    indeksi_kart <- which(nepobrane_karte == 1)
+  indeksi_neodkritih <- which(odkrite_karte == 0)  # indeksi neodkritih kart (gre po stolpcih)
+  if (length(indeksi_neodkritih) == 0) {  # če so bile vse karte že odkrite
+    izbira_neodkrite <- FALSE
   }
+  
+  nepobrane_karte <- matrix(1, nrow = n, ncol = k) - pobrane_skupine
+  stevilo_izbranih_kart <- min(which(izbrane_karte[1,] == 0)) - 1
+  for (i in 1:stevilo_izbranih_kart) {
+    nepobrane_karte[izbrane_karte[1,i], izbrane_karte[2,i]] <- 0  # v istem koraku ne izberemo ene karte večkrat
+  }
+  indeksi_kart <- which(nepobrane_karte == 1)
+  
+  if (izbira_neodkrite | (length(indeksi_kart) == 0)) {  # med neodkritimi izbiramo tudi, če ni več nepobranih odkritih
+    indeksi_kart <- indeksi_neodkritih
+  } 
   
   if (length(indeksi_kart) == 1) {
     indeks_karte <- indeksi_kart  # izberemo edino možno karto (moramo zapisati posebej zaradi posebnosti funkcije sample)
@@ -57,11 +58,11 @@ izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih,
   k <- ncol(odkrite_karte)  # velikost skupin
   n <- nrow(odkrite_karte)  # število skupin
   
-  # vektor "odkrite_skupine" ima 1 na mestu skupine, kjer so vse karte iz skupine že odkrite, 
-  # drugje so 0
+  # vektor "odkrite_skupine" ima TRUE na mestu skupine, kjer so vse karte iz skupine že odkrite, 
+  # drugje je FALSE
   odkrite_skupine <- (rowSums(odkrite_karte) == k)  
-  # vektor ima 1 na mestu, kjer so vse karte iz skupine že odkrite in skupina še ni pri 
-  # nobenem od igralcev, drugje so 0 
+  # vektor "potencialne_skupine" ima 1 na mestu, kjer so vse karte iz skupine že odkrite in 
+  # skupina še ni pri nobenem od igralcev, drugje so 0 
   potencialne_skupine <- odkrite_skupine - pobrane_skupine 
   
   if ((sum(potencialne_skupine) >= 1) & (runif(1) <= spomin^k)) { 
@@ -74,7 +75,7 @@ izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih,
   } else { # če nobena skupina še ni bila odkrita ali se jih igralec ne spomni
     
     # matrika "izbrane_karte" ima v i-tem stolpcu zapisana indeksa vrstice in stolpca 
-    # (v tem zaporedju) i-te izbrane karte 
+    # (v tem zaporedju) i-te izbrane karte v eni izbiri skupine
     izbrane_karte <- matrix(0, nrow = 2, ncol = k) 
     
     for (i in 1:k) {
@@ -83,7 +84,7 @@ izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih,
       odkrite_karte[izbrane_karte[1,i], izbrane_karte[2,i]] <- 1
       
       stevilo_razlicnih_kart <- length(unique(izbrane_karte[1,1:i]))
-      if (stevilo_razlicnih_kart > 1) {  # odkrili smo dve različni karti -> v tem koraku ne moremo odkriti skupine
+      if (stevilo_razlicnih_kart > 1) {  # odkrili smo dve različni karti -> v tem koraku ne moremo odkriti skupine, z odkrivanjem nadaljnjih bi le pomagali ostalim igralcem
         break
       } 
       
@@ -99,6 +100,14 @@ izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih,
     }
     
   }
+  
+  # print("Korak:")
+  # print("Odkrite karte:")
+  # print(odkrite_karte)
+  # print("Pobrane skupine")
+  # print(pobrane_skupine)
+  # print("Skupine po igralcih")
+  # print(skupine_po_igralcih)
   
   return(list("odkrite_karte" = odkrite_karte, 
               "pobrane_skupine" = pobrane_skupine, 
@@ -146,10 +155,12 @@ igra <- function (p, k, n, spomini) {
   pobrane_skupine <- rep(0, n)  # vektor pobranih skupin
   skupine_po_igralcih <- rep(0, p)  # vektor števila pobranih skupin po igralcih 
   stevilo_potez <- 0  # število potez oziroma zamenjav igralcev
-    
-  while (sum(pobrane_skupine) != n) {
   
+  while (sum(pobrane_skupine) != n) {
+    
     for (igralec in 1:p) {
+      
+      # print(paste("Poteza:", stevilo_potez + 1))
       
       # ena poteza igre 
       poteza_igre <- poteza_igre(odkrite_karte, pobrane_skupine, skupine_po_igralcih, igralec, spomini[igralec])
@@ -159,20 +170,12 @@ igra <- function (p, k, n, spomini) {
       
       stevilo_potez <- stevilo_potez + 1
       
-      # print(paste("Poteza:", stevilo_potez))
-      # print("Odkrite karte:")
-      # print(odkrite_karte)
-      # print("Pobrane skupine")
-      # print(pobrane_skupine)
-      # print("Skupine po igralcih")
-      # print(skupine_po_igralcih)
-      
       if (sum(pobrane_skupine) == n) {  # igralec je pobral zadnjo skupino
         break
       }
       
     }
-  
+    
   }
   
   zaporedje_igralcev <- order(skupine_po_igralcih, decreasing = TRUE)  # indeksi igralcev razvrščeni od zmagovalca do poraženca

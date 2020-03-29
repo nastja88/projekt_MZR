@@ -84,6 +84,7 @@ izbira_skupine <- function (odkrite_karte, pobrane_skupine, skupine_po_igralcih,
       odkrite_karte[izbrane_karte[1,i], izbrane_karte[2,i]] <- 1
       
       stevilo_razlicnih_kart <- length(unique(izbrane_karte[1,1:i]))
+
       if (stevilo_razlicnih_kart > 1) {  # odkrili smo dve različni karti -> v tem koraku ne moremo odkriti skupine, z odkrivanjem nadaljnjih bi le pomagali ostalim igralcem
         break
       } 
@@ -159,7 +160,7 @@ igra <- function (p, k, n, spomini) {
   while (sum(pobrane_skupine) != n) {
     
     for (igralec in 1:p) {
-      
+
       # print(paste("Poteza:", stevilo_potez + 1))
       
       # ena poteza igre 

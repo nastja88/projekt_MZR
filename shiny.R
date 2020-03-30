@@ -3,8 +3,6 @@ library(shiny)
 source("knjiznice.R")  # naložimo knjižnice, ki jih potrebujemo
 source("spomin.R")  # naložimo funkcije, ki jih potrebujemo za igro
 
-m <- 100  # število ponovitev poskusa
-
 # uporabili bomo paralelno računanje
 no_cores <- detectCores() - 1
 
@@ -16,7 +14,7 @@ ui <- fluidPage(
     
     sidebarPanel(
       
-      sliderInput(inputId = "igralci",
+      sliderInput(inputId = "p",
                   label = "Število igralcev:",
                   min = 2,
                   max = 10,
@@ -37,12 +35,14 @@ ui <- fluidPage(
                   value = 10,
                   step = 1),
       
-      sliderInput(inputId = "spomin",
-                  label = "Spomin:",
-                  min = 0,
-                  max = 1,
-                  value = 1,
-                  step = 0.1),
+      sliderInput(inputId = "m",
+                  label = "Število ponovitev poskusa:",
+                  min = 50,
+                  max = 200,
+                  value = 100,
+                  step = 10),
+      
+      uiOutput("spomin0"),
       
       actionButton("simulacija", "Izvedi simulacijo")
       
@@ -60,18 +60,35 @@ ui <- fluidPage(
   )
 )
 
+
 server <- function(input, output) {
+  
+  id_names <- reactive(paste0("Spomin igralca ", seq_len(input$p)))
+
+  output$spomin0 <- renderUI({
+    purrr::map(id_names(), ~ sliderInput(inputId = .x,
+                                          label = .x,
+                                          min = 0,
+                                          max = 1,
+                                          value = 1,
+                                          step = 0.1))
+  })
   
   rez <- reactive ({
     
     input$simulacija
     
-    p <- isolate(input$igralci) # število igralcev
+    p <- isolate(input$p) # število igralcev
     k <- isolate(input$k)  # velikost skupine enakih kart
     n <- isolate(input$n)  # število skupin
-    spomin <- isolate(input$spomin)  # verjetnost nepozabljanja posameznega igralca (nanaša se na posamezno karto; zaenkrat za vse igralce enako)
-    spomini <- rep(spomin, p)
+    m <- as.numeric(isolate(input$m))  # število ponovitev poskusa
     
+    if(!is.null(spomini)) {
+      spomini <- rep(1,p)  # verjetnost nepozabljanja posameznega igralca (nanaša se na posamezno karto; zaenkrat za vse igralce enako)
+    } else {
+      spomini <- sapply(1:p, function(i) { as.numeric(isolate(input[[paste0("Spomin igralca ", i)]])) })
+    }
+
     cl <- makeCluster(no_cores)
     registerDoParallel(cl)
     
@@ -79,13 +96,13 @@ server <- function(input, output) {
                    .export = c("izbira_nakljucne_karte", "izbira_skupine",
                                "poteza_igre", "igra")) %dorng% {
                                  
-                                 rezultati_igre <- igra(p, k, n, spomini)
-                                 
-                                 # zapišimo rezultate
-                                 cbind("stevilo_menjav" = rezultati_igre$stevilo_potez,  # število menjav igralcev
-                                       "zmagovalec" = rezultati_igre$zaporedje_igralcev[1])  # indeks zmagovalca
-                                 
-                               }
+       rezultati_igre <- igra(p, k, n, spomini)
+       
+       # zapišimo rezultate
+       cbind("stevilo_menjav" = rezultati_igre$stevilo_potez,  # število menjav igralcev
+             "zmagovalec" = rezultati_igre$zaporedje_igralcev[1])  # indeks zmagovalca
+       
+    }
     
     stopCluster(cl)
     

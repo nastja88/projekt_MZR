@@ -1,6 +1,5 @@
-library(shiny)
-
 source("knjiznice.R")  # naložimo knjižnice, ki jih potrebujemo
+
 source("spomin.R")  # naložimo funkcije, ki jih potrebujemo za igro
 
 # uporabili bomo paralelno računanje

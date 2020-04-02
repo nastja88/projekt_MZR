@@ -82,7 +82,7 @@ server <- function(input, output) {
     n <- isolate(input$n)  # število skupin
     m <- as.numeric(isolate(input$m))  # število ponovitev poskusa
     
-    if(!is.null(spomini)) {
+    if (exists('spomini') == FALSE) {
       spomini <- rep(1,p)  # verjetnost nepozabljanja posameznega igralca (nanaša se na posamezno karto; zaenkrat za vse igralce enako)
     } else {
       spomini <- sapply(1:p, function(i) { as.numeric(isolate(input[[paste0("Spomin igralca ", i)]])) })

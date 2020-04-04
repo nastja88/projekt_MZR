@@ -1,5 +1,9 @@
 # Projekt pri predmetu Matematika z računalnikom – Spomin
 
+## Aplikacija
+
+Aplikacija je shranjena v datoteki `shiny.R` in za njen zagon je dovolj, da zgolj poženemo to datoteko. S tem se najprej naložijo vse potrebne knižnice, ki se nahajajo v datoteki `knjiznice.R`, in funkcije za izvedbo igre Spomin v datoteki `spomin.R`. Ob zagonu aplikacije se uporabniku ponudi možnost izbire nastavitve števila igralcev, velikosti in števila skupin ter števila ponovitev poskusa. Po izbiri števila igralcev se pojavi tudi enako število novih izbir spomina (za vsakega od igralcev ena). Za izvedbo simulacije (s paralelnim računanjem) z želenimi parametri je potrebno le še pritisniti na gumb `Izvedi simulacijo`. Po nekaj trenutkih se pojavi histogram števila menjav med igralci s pripadajočim vzorčnim povprečjem. Poleg tega so prikazane tudi vzorčne verjetnosti zmag vsakega od igralcev (razvrščeno po velikosti).
+
 ## Ideja projekta
 
 Igra Spomin vsebuje `k*n` kart oziroma `n` skupin velikosti `k` istih kart (pri standardni verziji je seveda `k = 2`). Igro igra `p` igralcev, pri čemer je `p` vsaj 2. Ko je posamezen igralec na potezi, zaporedoma odkrije `k` kart. Če se ujemajo, jih pobere in nadaljuje z odkrivanjem naslednjih `k` kart, sicer pa je na vrsti naslednji igralec. Igra se konča, ko so vsi pari pobrani, zmaga pa tisti igralec, ki je pobral največ parov.
@@ -22,6 +26,3 @@ Funkcija `izbira_skupine` sprejme in vrne istovrstne podatke kot prejšnja funkc
 
 Ostala nam je le še funkcija `izbira_nakljucne_karte`. Ta poleg nekaterih že prej omenjenih argumentov sprejme tudi `2*k` matriko `izbrane_karte`, v katero si zapisujemo v tem koraku izbrane karte, da se izognemo večkratni izbiri iste karte v posameznem koraku. Natančneje si v prvo vrstico i-tega stolpca zapišemo indeks vrste i-te izbrane karte, v drugo vrstico pa pripadajoč indeks stolpca. Tu število `spomin` uporabimo na način, da z verjetnostjo `spomin` izbiramo izmed še neodkritih kart, z verjetnostjo `1 - spomin` pa izmed vseh še ne pobranih kart. V primeru, da neodkritih kart ni več, seveda izbiramo med že odkritimi (a še ne pobranimi). Izmed tako dobljenih možnih kart izžrebamo eno, vse z enako verjetnostjo.
   
-## Aplikacija
-
-Aplikacija je shranjena v datoteki `shiny.R` in za njen zagon je dovolj, da zgolj poženemo to datoteko. S tem se najprej naložijo vse potrebne knižnice, ki se nahajajo v datoteki `knjiznice.R`, in funkcije za izvedbo igre v datoteki `spomin.R`. Ob zagonu aplikacije se uporabniku ponudi možnost izbire nastavitve števila igralcev (`p`), velikosti (`k`) in števila (`n`) skupin ter števila ponovitev poskusa (`m`). Po izbiri števila igralcev se pojavi tudi enako število novih izbir spomina (za vsakega od igralcev ena). Za izvedbo simulacije (s paralelnim računanjem) z želenimi parametri je potrebno le še pritisniti na gumb `Izvedi simulacijo`. Po nekaj trenutkih se pojavi histogram števila menjav med igralci s pripadajočim vzorčnim povprečjem. Poleg tega so prikazane tudi vzorčne verjetnosti zmag vsakega od igralcev (razvrščeno po velikosti).

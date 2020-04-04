@@ -1,4 +1,10 @@
-source("knjiznice.R")  # naložimo knjižnice, ki jih potrebujemo
+# naložimo knjižnice, ki jih potrebujemo
+library(shiny)  # vse funkcije, ki so povezane z aplikacijo
+library(purrr)  # map
+library(parallel)  # detectCores
+library(doParallel)  # registerDoParallel
+library(doRNG)  # %dorng%
+library(ggplot2)  # ggplot
 
 source("spomin.R")  # naložimo funkcije, ki jih potrebujemo za igro
 

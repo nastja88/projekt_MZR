@@ -2,7 +2,7 @@
 
 ## Aplikacija
 
-Aplikacija je shranjena v datoteki `shiny.R` in za njen zagon je dovolj, da zgolj poženemo to datoteko. S tem se najprej naložijo vse potrebne knižnice, ki se nahajajo v datoteki `knjiznice.R`, in funkcije za izvedbo igre Spomin v datoteki `spomin.R`. Ob zagonu aplikacije se uporabniku ponudi možnost izbire nastavitve števila igralcev, velikosti in števila skupin ter števila ponovitev poskusa. Po izbiri števila igralcev se pojavi tudi enako število novih izbir spomina (za vsakega od igralcev ena). Za izvedbo simulacije (s paralelnim računanjem) z želenimi parametri je potrebno le še pritisniti na gumb `Izvedi simulacijo`. Po nekaj trenutkih se pojavi histogram števila menjav med igralci s pripadajočim vzorčnim povprečjem. Poleg tega so prikazane tudi vzorčne verjetnosti zmag vsakega od igralcev (razvrščeno po velikosti).
+Aplikacija je shranjena v datoteki `shiny.R` in za njen zagon je dovolj, da zgolj poženemo to datoteko. S tem se najprej naložijo vse potrebne knjižnice in funkcije (iz datoteke `spomin.R`) za izvedbo igre Spomin. Ob zagonu aplikacije se uporabniku ponudi možnost izbire nastavitve števila igralcev, velikosti in števila skupin ter števila ponovitev poskusa. Po izbiri števila igralcev se pojavi tudi enako število novih izbir spomina (za vsakega od igralcev ena). Za izvedbo simulacije (s paralelnim računanjem) z želenimi parametri je potrebno le še pritisniti na gumb `Izvedi simulacijo`. Po nekaj trenutkih se pojavi histogram števila menjav med igralci s pripadajočim vzorčnim povprečjem. Poleg tega so prikazane tudi vzorčne verjetnosti zmag vsakega od igralcev (razvrščeno po velikosti).
 
 ## Ideja projekta
 

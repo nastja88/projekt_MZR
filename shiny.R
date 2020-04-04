@@ -5,6 +5,8 @@ source("spomin.R")  # naložimo funkcije, ki jih potrebujemo za igro
 # uporabili bomo paralelno računanje
 no_cores <- detectCores() - 1
 
+p0 <- 2
+
 ui <- fluidPage(
   
   titlePanel("Igra Spomin"),
@@ -17,7 +19,7 @@ ui <- fluidPage(
                   label = "Število igralcev:",
                   min = 2,
                   max = 10,
-                  value = 2,
+                  value = p0,
                   step = 1),
       
       sliderInput(inputId = "k",
@@ -60,7 +62,9 @@ ui <- fluidPage(
 )
 
 
-server <- function(input, output) {
+server <- function(input, output) { 
+  
+  spomini <- rep(1, p0)
   
   id_names <- reactive(paste0("Spomin igralca ", seq_len(input$p)))
 
@@ -74,9 +78,11 @@ server <- function(input, output) {
   })
   
   rez <- reactive ({
+     
+    req(input[["Spomin igralca 1"]])  # s tem preprečimo, da bi se ta del izvedel prej kot so nastavljeni spomini
     
     input$simulacija
-    
+   
     p <- isolate(input$p) # število igralcev
     k <- isolate(input$k)  # velikost skupine enakih kart
     n <- isolate(input$n)  # število skupin
@@ -136,7 +142,11 @@ server <- function(input, output) {
   
   output$zmage_tabela <- renderTable ({
     zmage <- table(rez()$zmagovalec)
-    delez_zmag <- as.data.frame(sort(zmage/sum(zmage) * 100, decreasing = TRUE))  # v %
+    if (length(zmage) == 1) {
+      delez_zmag <- data.frame("Igralec" = as.integer(names(zmage)), "Verjetnost zmage [%]" = 100)
+    } else {
+      delez_zmag <- as.data.frame(sort(zmage/sum(zmage) * 100, decreasing = TRUE))
+    }
     colnames(delez_zmag) <- c("Igralec", "Verjetnost zmage [%]")
     delez_zmag
   })

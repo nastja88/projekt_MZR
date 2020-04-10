@@ -1,15 +1,9 @@
 # naložimo knjižnice, ki jih potrebujemo
 library(shiny)  # vse funkcije, ki so povezane z aplikacijo
 library(purrr)  # map
-library(parallel)  # detectCores
-library(doParallel)  # registerDoParallel
-library(doRNG)  # %dorng%
 library(ggplot2)  # ggplot
 
 source("spomin.R")  # naložimo funkcije, ki jih potrebujemo za igro
-
-# uporabili bomo paralelno računanje
-no_cores <- detectCores() - 1
 
 p0 <- 2
 
@@ -68,27 +62,26 @@ ui <- fluidPage(
 )
 
 
-server <- function(input, output) { 
+server <- function(input, output) {
   
   spomini <- rep(1, p0)
   
   id_names <- reactive(paste0("Spomin igralca ", seq_len(input$p)))
-
+  
   output$spomin0 <- renderUI({
     purrr::map(id_names(), ~ sliderInput(inputId = .x,
-                                          label = .x,
-                                          min = 0,
-                                          max = 1,
-                                          value = 1,
-                                          step = 0.1))
+                                         label = .x,
+                                         min = 0,
+                                         max = 1,
+                                         value = 1,
+                                         step = 0.1))
   })
   
-  rez <- reactive ({
-     
+  rez <- eventReactive (eventExpr = input$simulacija,
+                        valueExpr = {
+    
     req(input[["Spomin igralca 1"]])  # s tem preprečimo, da bi se ta del izvedel prej kot so nastavljeni spomini
     
-    input$simulacija
-   
     p <- isolate(input$p) # število igralcev
     k <- isolate(input$k)  # velikost skupine enakih kart
     n <- isolate(input$n)  # število skupin
@@ -99,25 +92,27 @@ server <- function(input, output) {
     } else {
       spomini <- sapply(1:p, function(i) { as.numeric(isolate(input[[paste0("Spomin igralca ", i)]])) })
     }
-
-    cl <- makeCluster(no_cores)
-    registerDoParallel(cl)
     
-    rez <- foreach(j = 1:m, .combine = "rbind",
-                   .export = c("izbira_nakljucne_karte", "izbira_skupine",
-                               "poteza_igre", "igra")) %dorng% {
-                                 
-       rezultati_igre <- igra(p, k, n, spomini)
-       
-       # zapišimo rezultate
-       cbind("stevilo_menjav" = rezultati_igre$stevilo_potez,  # število menjav igralcev
-             "zmagovalec" = rezultati_igre$zaporedje_igralcev[1])  # indeks zmagovalca
-       
-    }
+    rez <- matrix(0, nrow = m, ncol = 2)
     
-    stopCluster(cl)
+    withProgress(message = 'Simulacija iger', value = 0, {
+      
+      for (j in 1:m) {
+        
+        rezultati_igre <- igra(p, k, n, spomini)
+        incProgress(amount = 1/m)
+        
+        # zapišimo rezultate
+        rez[j,] <- c(rezultati_igre$stevilo_potez,  # število menjav igralcev
+                     rezultati_igre$zaporedje_igralcev[1])  # indeks zmagovalca
+        
+      }
+      
+      rez <- as.data.frame(rez)
+      colnames(rez) <- c("stevilo_menjav", "zmagovalec")
+      
+    })
     
-    rez <- as.data.frame(rez)
     rez
     
   })
@@ -127,13 +122,16 @@ server <- function(input, output) {
     rez <- rez()
     povprecje <- mean(rez$stevilo_menjav)
     standardni_odklon <- sd(rez$stevilo_menjav)
+    st_razlicnih_vrednosti <- max(rez$stevilo_menjav) - min(rez$stevilo_menjav) + 1
     
     ggplot(data = rez, aes(x = stevilo_menjav)) +
-      geom_histogram(aes(x = stevilo_menjav, y = ..density..), fill = "cadetblue2", 
-                     bins = min(20, max(rez$stevilo_menjav) - min(rez$stevilo_menjav) + 1)) +
+      geom_histogram(aes(x = stevilo_menjav, y = ..density..), 
+                     fill = "cadetblue2", 
+                     bins = min(20, st_razlicnih_vrednosti)) +
       #geom_line(stat="density", color = "red", size = 1) +
       geom_vline(xintercept = povprecje, size = 1, color = "blueviolet") +     
-      geom_text(aes(x = povprecje + standardni_odklon/4, y = 0), label = povprecje, color = "blueviolet") +
+      geom_text(aes(x = povprecje + standardni_odklon/4, y = 0), 
+                label = round(povprecje, 2), color = "blueviolet") +
       labs(title = "Prikaz vzorčne porazdelitve števila menjav med igralci",
            subtitle = "(Z vijolično barvo je označeno vzorčno povprečje.)",
            x = "Število menjav", y = "Frekvenca [%]") +

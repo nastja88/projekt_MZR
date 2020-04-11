@@ -6,7 +6,7 @@ Aplikacija je shranjena v datoteki `shiny.R` in za njen zagon je dovolj, da zgol
 
 ## Ideja projekta
 
-Igra Spomin vsebuje `k*n` kart oziroma `n` skupin velikosti `k` istih kart (pri standardni verziji je seveda `k = 2`). Igro igra `p` igralcev, pri čemer je `p` vsaj 2. Ko je posamezen igralec na potezi, zaporedoma odkrije `k` kart. Če se ujemajo, jih pobere in nadaljuje z odkrivanjem naslednjih `k` kart, sicer pa je na vrsti naslednji igralec. Igra se konča, ko so vsi pari pobrani, zmaga pa tisti igralec, ki je pobral največ parov.
+Igra Spomin vsebuje `k*n` kart oziroma `n` skupin velikosti `k` istih kart (pri standardni verziji je seveda `k = 2`). Igro igra `p` igralcev, pri čemer je `p` vsaj 2. Ko je posamezen igralec na potezi, zaporedoma odkrije `k` kart. Če se ujemajo, jih pobere in nadaljuje z odkrivanjem naslednjih `k` kart, sicer pa je na vrsti naslednji igralec. Igra se konča, ko so vse skupine pobrane, zmaga pa tisti igralec, ki je pobral največ skupin.
 
 Pri simulaciji igre predpostavljamo, da so igralci popolnoma racionalni oziroma igrajo optimalno strategijo. Tako je njihov edini cilj zmaga. So pa igralci omejeni s svojim spominom, ki ga modeliramo kot verjetnost (torej ima vrednosti na intervalu [0,1]), da se igralec pri posamezni izbiri karte spomni prejšnjih kart. Vrednost 1 torej pomeni popoln spomin, 0 pa popolno naključnost. Vektor spominov vseh igralcev poimenujemo `spomini`.
 

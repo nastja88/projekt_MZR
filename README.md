@@ -14,8 +14,8 @@ Pri simulaciji igre predpostavljamo, da so igralci popolnoma racionalni oziroma 
 
 Shranjena je v datoteki `spomin.R`. Igro simuliramo s pomočjo štirih funkcij, in sicer `igra`, `poteza_igre`, `izbira_skupine` in `izbira_nakljucne_karte`. Osnovni funkciji `igra` podamo parametre `p`, `k`, `n` in `spomini`. Tekom igre hranimo več podatkov:
 * matriko `odkrite_karte` oblike `n*k`, ki vsebuje indikatorje ali je bila posamezna karta že odkrita, 
-* vektor `pobrane_skupine` vsebuje indikatorje ali je bila posamezna skupina že pobrana, 
-* vektor `skupine_po_igralcih` vsebuje števila pobranih skupin po igralcih, 
+* vektor `pobrane_skupine` dolžine `n` vsebuje indikatorje ali je bila posamezna skupina že pobrana, 
+* vektor `skupine_po_igralcih` dolžine `p` vsebuje števila pobranih skupin po igralcih, 
 * število `stevilo_potez` šteje število potez oziroma zamenjav igralcev.
 
 Funkcija `igra` gre po vrsti po igralcih in za vsakega naredi eno potezo s pomočjo funkcije `poteza_igre`. To počne dokler niso pobrane vse skupine. Vmes šteje število potez, na koncu pa določi še vrstni red uspešnosti igralcev. Oboje ob zaključku tudi vrne.
